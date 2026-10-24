@@ -3,4 +3,4 @@
   X-Content-Type-Options: nosniff
   Referrer-Policy: strict-origin-when-cross-origin
   Permissions-Policy: camera=(), microphone=(), geolocation=()
-  
+  Content-Security-Policy: default-src 'self'; img-src 'self' data: https:; style-src 'self' https://fonts.googleapis.com 'unsafe-hashes' 'sha256-OhQrw7DV/wyrhaI1sIs3BCw+A/ww1r5bSoDRh+TiPUI=' 'sha256-1aM7kNMLpP9OwGkET3Djm+iHOylzcaaVdtZOkNdqj8c=' 'sha256-Yy3/pmkiLHJqgIHLsS1eFtUfLrMk5GTdbluhqPtO9X4=' 'sha256-Rn7f6kXAJs3y+yUoVo2F87yrwIBmCjfPIl8t9UQ5tys=' 'sha256-7uP4UMn0lzlm+J1RYqmY7+9oGVF+O/z16924/Q7zptE='; font-src https://fonts.gstatic.com; script-src 'self' https://cdnjs.cloudflare.com 'sha256-SFNjttpgSokr9EKsJtMIQQKdfzADCvh1RnVhERlaX50='; frame-ancestors 'none'; base-uri 'self'; form-action 'self'
