@@ -1,0 +1,234 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>Steam Pazar Panosu</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+<style>
+:root{color-scheme:dark;--bg:#0b0d1a;--panel:#141830;--hover:#1c2142;--line:#272c52;--ink:#eef0ff;--muted:#9ba4cc;
+--accent:#5eead4;--pick:#ffb454;--head:"Press Start 2P",ui-monospace,Consolas,monospace;--body:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 var(--body)}
+h1,h2{font-family:var(--head);font-weight:400;line-height:1.6;margin:0}
+h1{font-size:clamp(14px,3.4vw,22px)}
+h2{font-family:var(--body);font-weight:600;font-size:16px}
+main{max-width:1240px;margin:0 auto;padding:24px 16px 40px}
+header{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:end;gap:10px;margin-bottom:6px}
+.lead{color:var(--muted);margin:0 0 20px;max-width:62ch}
+.meta{color:var(--muted);font-size:14px;margin:0}
+a{color:var(--accent)}
+:focus-visible{outline:3px solid var(--pick);outline-offset:2px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px}
+.kpis{display:grid;grid-template-columns:repeat(3,1fr);margin-bottom:16px;padding:0}
+.kpi{padding:18px 20px}
+.kpi+.kpi{border-left:1px solid var(--line)}
+.kpi b{display:block;font-size:clamp(22px,4vw,34px);font-weight:650;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.kpi span{color:var(--muted);font-size:14px}
+.filters{display:flex;flex-wrap:wrap;gap:14px 24px;align-items:end;margin-bottom:16px}
+label{display:flex;flex-direction:column;gap:6px;font-size:14px;color:var(--muted)}
+select,button{font:inherit;color:var(--ink);background:var(--hover);border:1px solid var(--line);border-radius:10px;padding:8px 12px;min-height:42px}
+button{cursor:pointer}button:hover,select:hover{border-color:var(--accent)}
+input[type=range]{accent-color:var(--accent);min-height:42px;width:200px;max-width:100%}
+input[type=checkbox]{accent-color:var(--accent);width:18px;height:18px}
+.chk{flex-direction:row;align-items:center;gap:10px;min-height:42px}
+.grid{display:grid;grid-template-columns:minmax(0,1.9fr) minmax(0,1fr);gap:16px;margin-bottom:16px}
+@media(max-width:900px){.grid{grid-template-columns:1fr}}
+@media(max-width:520px){.kpis{grid-template-columns:1fr}.kpi+.kpi{border-left:0;border-top:1px solid var(--line)}}
+svg{width:100%;height:auto;display:block;margin-top:8px}
+svg text{fill:var(--muted);font-size:12px}
+.tick line,.domain{stroke:var(--line)}
+.dot{fill:var(--accent);fill-opacity:.55}
+.dot.on{fill:var(--pick);fill-opacity:1;stroke:#fff;stroke-width:1.2;filter:drop-shadow(0 0 5px var(--pick))}
+.selection{fill:var(--pick);fill-opacity:.1;stroke:var(--pick);stroke-dasharray:4 3}
+.bar{fill:var(--accent)}
+.sum{font-size:14px;color:var(--muted);margin:8px 0 0}
+details{margin-top:10px;color:var(--muted)}summary{cursor:pointer}
+.tw{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}
+tbody tr:hover{background:var(--hover)}
+td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
+th button{border:0;background:none;padding:2px 0;min-height:32px;font-weight:650;color:var(--muted)}
+th[aria-sort=ascending] button::after{content:" ▲"}th[aria-sort=descending] button::after{content:" ▼"}
+th[aria-sort]:not([aria-sort=none]) button{color:var(--ink)}
+.state{padding:28px;text-align:center}
+.banner{border:1px solid var(--pick);border-radius:10px;padding:10px 14px;margin-bottom:16px;color:var(--pick)}
+.sk{height:96px;border-radius:14px;background:linear-gradient(90deg,var(--panel),var(--hover),var(--panel));background-size:200% 100%;animation:sk 1.4s linear infinite}
+@keyframes sk{to{background-position:-200% 0}}
+@media(prefers-reduced-motion:reduce){.sk{animation:none}}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<main>
+<header>
+  <h1>Steam Pazar Panosu</h1>
+  <p class="meta" id="upd" role="status">Veri yükleniyor…</p>
+</header>
+<p class="lead">Yeni oyununu hangi türde, hangi fiyatla çıkarmalısın? Steam’deki en çok oynanan oyunlara bak, grafikte bir alan seç, tablo ve özetler seçimine göre değişsin.</p>
+
+<div id="loading" class="kpis" aria-busy="true" style="gap:12px"><div class="sk"></div><div class="sk"></div><div class="sk"></div></div>
+
+<div id="error" class="panel state" hidden role="alert">
+  <p id="emsg"></p>
+  <button id="retry">Yeniden dene</button>
+</div>
+
+<div id="app" hidden>
+  <div id="banner" class="banner" hidden role="status"></div>
+
+  <section class="panel kpis" aria-label="Özet göstergeler">
+    <div class="kpi"><b id="k1">–</b><span>Gösterilen oyun</span></div>
+    <div class="kpi"><b id="k2">–</b><span>Toplam anlık oyuncu</span></div>
+    <div class="kpi"><b id="k3">–</b><span>Medyan fiyat (ABD doları)</span></div>
+  </section>
+
+  <section class="panel filters" aria-label="Filtreler">
+    <label>Tür <select id="fg"></select></label>
+    <label>En yüksek fiyat: <output id="fpv" style="color:var(--ink)"></output>
+      <input id="fp" type="range" min="0" max="80" step="5" value="80"></label>
+    <label class="chk"><input id="ff" type="checkbox" checked> Ücretsiz oyunlar dahil</label>
+    <button id="clr">Seçimi ve filtreleri temizle</button>
+  </section>
+
+  <div class="grid">
+    <section class="panel" aria-labelledby="h-sc">
+      <h2 id="h-sc">Fiyat ve oyuncu sayısı</h2>
+      <p class="meta">Fareyle bir dikdörtgen çiz; klavyede filtreleri kullan.</p>
+      <svg id="sc" viewBox="0 0 640 380" role="img" aria-label="Fiyat ve anlık oyuncu sayısı saçılım grafiği"></svg>
+      <p class="sum" id="s1"></p>
+    </section>
+    <section class="panel" aria-labelledby="h-bar">
+      <h2 id="h-bar">Türe göre medyan fiyat</h2>
+      <svg id="bar" viewBox="0 0 400 380" role="img" aria-label="Türe göre medyan fiyat çubuk grafiği"></svg>
+      <p class="sum" id="s2"></p>
+      <details><summary>Veriyi tablo olarak gör</summary>
+        <div class="tw"><table><caption class="meta">Tür, oyun sayısı ve medyan fiyat</caption>
+        <thead><tr><th>Tür</th><th class="n">Oyun</th><th class="n">Medyan ($)</th></tr></thead><tbody id="gt"></tbody></table></div>
+      </details>
+    </section>
+  </div>
+
+  <section class="panel" aria-labelledby="h-t">
+    <h2 id="h-t">Oyun listesi</h2>
+    <div id="empty" class="state" hidden>
+      <p><b>Bu filtrelere uyan oyun yok.</b> Fiyat sınırını yükselt ya da seçimi temizle.</p>
+    </div>
+    <div class="tw" id="tw"><table><caption class="meta" style="text-align:left;padding:6px 0">En fazla 100 satır. Başlıklara basarak sırala.</caption>
+      <thead><tr id="th"></tr></thead><tbody id="tbody"></tbody></table></div>
+  </section>
+</div>
+
+<p class="meta" style="margin-top:20px">Kaynak: <a href="https://steamspy.com/api.php">SteamSpy</a> ve <a href="https://developer.valvesoftware.com/wiki/Steam_Web_API">Steam Web API</a>.
+Kurgusal müşteri için hazırlanmış eğitim projesidir; resmî bir araç değildir.</p>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
+<script>
+const $=s=>document.querySelector(s), fmt=n=>n.toLocaleString("tr-TR"), usd=n=>n.toFixed(2).replace(".",",");
+const st={all:[],genre:"",max:80,free:true,brush:null,sort:{k:"players",d:-1}};
+const cols=[["name","Oyun",0],["genre","Tür",0],["price","Fiyat ($)",1],["players","Anlık oyuncu",1],["rating","Olumlu (%)",1]];
+
+function show(id){["loading","error","app"].forEach(x=>$("#"+x).hidden=x!==id)}
+function fail(msg){$("#emsg").textContent=msg;$("#upd").textContent="Veri alınamadı.";show("error")}
+async function load(){
+  show("loading");
+  if(location.protocol==="file:") return fail("Bu sayfa doğrudan dosyadan açılınca veriyi okuyamaz. Klasörde “python -m http.server 8000” çalıştırıp localhost:8000 adresini aç ya da GitHub Pages adresini kullan.");
+  let status=0;
+  try{
+    const r=await fetch("data/latest.json",{cache:"no-store"});
+    if(!r.ok){status=r.status;throw new Error(r.status)}
+    const d=await r.json();
+    try{localStorage.setItem("steam-cache",JSON.stringify(d))}catch{}
+    init(d,false);
+  }catch(e){
+    let c=null; try{c=JSON.parse(localStorage.getItem("steam-cache"))}catch{}
+    if(c) init(c,true);
+    else fail(status===404?"Henüz veri dosyası yok. GitHub’da Actions sekmesinden “Veriyi güncelle” iş akışını bir kez çalıştır.":"Veri alınamadı ve kayıtlı bir kopya yok. Bağlantını kontrol edip yeniden dene.");
+  }
+}
+function init(d,cached){
+  st.all=d.games;
+  const t=new Date(d.updated), age=(Date.now()-t)/36e5;
+  $("#upd").textContent=`Son güncelleme: ${t.toLocaleString("tr-TR")}`;
+  const b=$("#banner");
+  b.hidden=!(cached||age>36);
+  b.textContent=cached?"Sunucuya ulaşılamadı; en son kaydedilen veri gösteriliyor.":"Veri 36 saatten eski; otomatik güncelleme gecikmiş olabilir.";
+  const gs=[...new Set(st.all.map(g=>g.genre))].sort();
+  $("#fg").innerHTML=`<option value="">Tümü</option>`+gs.map(g=>`<option>${g}</option>`).join("");
+  $("#th").innerHTML=cols.map(([k,l,n])=>`<th class="${n?"n":""}" scope="col" aria-sort="none"><button data-k="${k}">${l}</button></th>`).join("");
+  show("app"); filtersChanged();
+}
+const base=()=>st.all.filter(g=>(!st.genre||g.genre===st.genre)&&g.price<=st.max&&(st.free||g.price>0));
+const sel=()=>{const b=base(); if(!st.brush) return b; const {x,y}=st.brush;
+  return b.filter(g=>{const p=Math.max(1,g.players);return g.price>=x[0]&&g.price<=x[1]&&p>=y[0]&&p<=y[1]})};
+const med=a=>a.length?d3.median(a):0;
+
+let X,Y,dots;
+function filtersChanged(){st.brush=null;drawScatter();update()}
+function drawScatter(){
+  const data=base(), svg=d3.select("#sc"), W=640,H=380,m={l:54,r:14,t:10,b:42};
+  svg.selectAll("*").remove();
+  X=d3.scaleLinear([0,Math.max(10,d3.max(data,g=>g.price)||10)],[m.l,W-m.r]).nice();
+  Y=d3.scaleLog([1,Math.max(10,d3.max(data,g=>g.players)||10)],[H-m.b,m.t]).nice();
+  svg.append("g").attr("transform",`translate(0,${H-m.b})`).call(d3.axisBottom(X).ticks(8));
+  svg.append("g").attr("transform",`translate(${m.l},0)`).call(d3.axisLeft(Y).ticks(6,"~s").tickSize(-(W-m.l-m.r)));
+  svg.append("text").attr("x",W/2).attr("y",H-6).attr("text-anchor","middle").text("Fiyat (ABD doları)");
+  svg.append("text").attr("transform","rotate(-90)").attr("x",-H/2).attr("y",13).attr("text-anchor","middle").text("Anlık oyuncu (log ölçek)");
+  svg.append("g").selectAll("circle").data(data).join("circle").attr("class","dot").attr("r",4.5)
+    .attr("cx",g=>X(g.price)).attr("cy",g=>Y(Math.max(1,g.players)));
+  dots=svg.selectAll("circle.dot");
+  svg.append("g").call(d3.brush().extent([[m.l,m.t],[W-m.r,H-m.b]]).on("brush end",e=>{
+    const s=e.selection;
+    st.brush=s?{x:[X.invert(s[0][0]),X.invert(s[1][0])],y:[Y.invert(s[1][1]),Y.invert(s[0][1])]}:null;
+    update();
+  }));
+}
+function update(){
+  const v=sel(), b=base(), on=new Set(v);
+  dots.classed("on",g=>st.brush&&on.has(g)).attr("r",g=>st.brush&&on.has(g)?6.5:4.5);
+  dots.select("title").remove();
+  dots.append("title").text(g=>`${g.name}: ${fmt(g.players)} oyuncu, ${usd(g.price)} $`);
+  $("#k1").textContent=v.length||"–";
+  $("#k2").textContent=v.length?fmt(d3.sum(v,g=>g.players)):"–";
+  $("#k3").textContent=v.length?usd(med(v.map(g=>g.price))):"–";
+  const top=[...v].sort((a,c)=>c.players-a.players)[0];
+  $("#s1").textContent=v.length?`${b.length} oyun çiziliyor${st.brush?`, ${v.length} tanesi seçili`:""}. En çok oyuncusu olan: ${top.name} (${fmt(top.players)}).`:"Gösterilecek oyun yok.";
+  drawBars(v); drawTable(v);
+}
+function drawBars(v){
+  const gm=d3.rollups(v,a=>({n:a.length,m:med(a.map(g=>g.price))}),g=>g.genre)
+    .map(([g,o])=>({g,...o})).sort((a,c)=>c.m-a.m);
+  $("#gt").innerHTML=gm.map(o=>`<tr><td>${o.g}</td><td class="n">${o.n}</td><td class="n">${usd(o.m)}</td></tr>`).join("");
+  const svg=d3.select("#bar"); svg.selectAll("*").remove();
+  const top=gm.slice(0,10), W=400,H=380,m={l:96,r:56,t:6,b:6};
+  if(!top.length){$("#s2").textContent="Gösterilecek tür yok.";return}
+  const x=d3.scaleLinear([0,d3.max(top,o=>o.m)||1],[m.l,W-m.r]), y=d3.scaleBand(top.map(o=>o.g),[m.t,H-m.b]).padding(.3);
+  svg.selectAll("rect").data(top).join("rect").attr("class","bar").attr("rx",4).attr("x",m.l).attr("y",o=>y(o.g)).attr("height",y.bandwidth()).attr("width",o=>Math.max(2,x(o.m)-m.l));
+  svg.selectAll(".l").data(top).join("text").attr("x",m.l-8).attr("y",o=>y(o.g)+y.bandwidth()/2+4).attr("text-anchor","end").text(o=>o.g);
+  svg.selectAll(".v").data(top).join("text").attr("x",o=>x(o.m)+6).attr("y",o=>y(o.g)+y.bandwidth()/2+4).text(o=>usd(o.m)+" $");
+  const lo=gm[gm.length-1];
+  $("#s2").textContent=`Medyan fiyatı en yüksek tür ${gm[0].g} (${usd(gm[0].m)} $), en düşük ${lo.g} (${usd(lo.m)} $).`;
+}
+function drawTable(v){
+  $("#empty").hidden=v.length>0; $("#tw").hidden=!v.length;
+  const {k,d}=st.sort, a=[...v].sort((p,q)=>{const x=p[k]??-1,y=q[k]??-1;return(typeof x==="string"?x.localeCompare(y,"tr"):x-y)*d}).slice(0,100);
+  $("#tbody").innerHTML=a.map(g=>`<tr><td>${g.name}</td><td>${g.genre}</td><td class="n">${usd(g.price)}</td><td class="n">${fmt(g.players)}</td><td class="n">${g.rating??"–"}</td></tr>`).join("");
+  document.querySelectorAll("#th th").forEach(th=>th.setAttribute("aria-sort",th.firstChild.dataset.k===k?(d>0?"ascending":"descending"):"none"));
+}
+$("#th").addEventListener("click",e=>{const k=e.target.dataset?.k; if(!k) return;
+  st.sort=st.sort.k===k?{k,d:-st.sort.d}:{k,d:k==="name"||k==="genre"?1:-1}; update()});
+$("#fg").onchange=e=>{st.genre=e.target.value;filtersChanged()};
+$("#fp").oninput=e=>{st.max=+e.target.value;$("#fpv").textContent=st.max+" $";filtersChanged()};
+$("#ff").onchange=e=>{st.free=e.target.checked;filtersChanged()};
+$("#clr").onclick=()=>{st.genre="";st.max=80;st.free=true;$("#fg").value="";$("#fp").value=80;$("#fpv").textContent="80 $";$("#ff").checked=true;filtersChanged()};
+$("#retry").onclick=load;
+$("#fpv").textContent="80 $";
+load();
+</script>
+</body>
+</html>
