@@ -165,13 +165,13 @@ function init(d,cached){
 }
 const base=()=>st.all.filter(g=>(!st.genre||g.genre===st.genre)&&g.price<=st.max&&(st.free||g.price>0));
 const sel=()=>{const b=base(); if(!st.brush) return b; const {x,y}=st.brush;
-  return b.filter(g=>{const p=Math.max(1,g.players);return g.price>=x[0]&&g.price<=x[1]&&p>=y[0]&&p<=y[1]})};
+  return b.filter(g=>{const p=g.players;return p>0&&g.price>=x[0]&&g.price<=x[1]&&p>=y[0]&&p<=y[1]})};
 const med=a=>a.length?d3.median(a):0;
 
 let X,Y,dots;
 function filtersChanged(){st.brush=null;drawScatter();update()}
 function drawScatter(){
-  const data=base(), svg=d3.select("#sc"), W=640,H=380,m={l:54,r:14,t:10,b:42};
+  const data=base().filter(g=>g.players>0), svg=d3.select("#sc"), W=640,H=380,m={l:54,r:14,t:10,b:42};
   svg.selectAll("*").remove();
   X=d3.scaleLinear([0,Math.max(10,d3.max(data,g=>g.price)||10)],[m.l,W-m.r]).nice();
   Y=d3.scaleLog([1,Math.max(10,d3.max(data,g=>g.players)||10)],[H-m.b,m.t]).nice();
@@ -197,7 +197,7 @@ function update(){
   $("#k2").textContent=v.length?fmt(d3.sum(v,g=>g.players)):"–";
   $("#k3").textContent=v.length?usd(med(v.map(g=>g.price))):"–";
   const top=[...v].sort((a,c)=>c.players-a.players)[0];
-  $("#s1").textContent=v.length?`${b.length} oyun çiziliyor${st.brush?`, ${v.length} tanesi seçili`:""}. En çok oyuncusu olan: ${top.name} (${fmt(top.players)}).`:"Gösterilecek oyun yok.";
+  $("#s1").textContent=v.length?`${b.filter(g=>g.players>0).length} oyun çiziliyor${b.some(g=>!g.players)?` (${b.filter(g=>!g.players).length} oyunun oyuncu verisi yok, grafikte gösterilmiyor)`:""}${st.brush?`, ${v.length} tanesi seçili`:""}. En çok oyuncusu olan: ${top.name} (${fmt(top.players)}).`:"Gösterilecek oyun yok.";
   drawBars(v); drawTable(v);
 }
 function drawBars(v){
@@ -217,7 +217,7 @@ function drawBars(v){
 function drawTable(v){
   $("#empty").hidden=v.length>0; $("#tw").hidden=!v.length;
   const {k,d}=st.sort, a=[...v].sort((p,q)=>{const x=p[k]??-1,y=q[k]??-1;return(typeof x==="string"?x.localeCompare(y,"tr"):x-y)*d}).slice(0,100);
-  $("#tbody").innerHTML=a.map(g=>`<tr><td>${g.name}</td><td>${g.genre}</td><td class="n">${usd(g.price)}</td><td class="n">${fmt(g.players)}</td><td class="n">${g.rating??"–"}</td></tr>`).join("");
+  $("#tbody").innerHTML=a.map(g=>`<tr><td>${g.name}</td><td>${g.genre}</td><td class="n">${usd(g.price)}</td><td class="n">${g.players?fmt(g.players):"veri yok"}</td><td class="n">${g.rating??"–"}</td></tr>`).join("");
   document.querySelectorAll("#th th").forEach(th=>th.setAttribute("aria-sort",th.firstChild.dataset.k===k?(d>0?"ascending":"descending"):"none"));
 }
 $("#th").addEventListener("click",e=>{const k=e.target.dataset?.k; if(!k) return;
