@@ -23,4 +23,6 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add data
           git diff --cached --quiet || git commit -m "Veri güncellemesi $(date -u +%F)"
+          git pull --rebase
           git push
+          
