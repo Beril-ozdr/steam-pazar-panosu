@@ -2,7 +2,7 @@
 
 Manisa’da kurulmuş kurgusal bir bağımsız oyun stüdyosunun yapımcısı için hazırlanmış canlı veri panosu: yeni oyunu hangi türde ve hangi fiyatla çıkarmalı?
 
-**Canlı adres:** https://beril-ozdr.github.io/steam-pazar-panosu/
+**Canlı adres:** https://steam-pazar-panosu.ozdizdarberil.workers.dev (Cloudflare Workers)
 
 Bu proje, Büyük Veri Analistliği programı Kullanıcı Arayüzü Tasarımı dersi dönem ödevidir (Beril Özdizdar).
 
@@ -22,14 +22,24 @@ Bu proje, Büyük Veri Analistliği programı Kullanıcı Arayüzü Tasarımı d
 
 `.github/workflows/update-data.yml` iş akışı her gün çalışır, `scripts/fetch_data.py` ile veriyi çeker ve `data/latest.json` dosyasını günceller. Aynı çalıştırma `data/history.csv` dosyasına bir özet satırı ekler; böylece kaynaklar geçmiş vermese bile kendi zaman serimizi biriktiririz. Çekim başarısız olursa mevcut veriye dokunulmaz, pano son başarılı veriyle açılır ve “Son güncelleme” zamanı her zaman ekranda görünür.
 
+Veri kaynaklarının kullanım koşullarına ve hız sınırlarına uyulur (SteamSpy için saniyede yaklaşık 1 istek). Yalnızca toplulaştırılmış oyun verisi gösterilir, kişisel veri yoktur.
+
 ## Depo yapısı
 
 ```
 index.html                    # pano arayüzü (D3.js)
+src/worker.js                 # /data/* için hız sınırı ve önbellek (Cloudflare Worker)
+wrangler.jsonc                # Cloudflare yapılandırması (kod olarak altyapı)
+_headers                      # güvenlik başlıkları (HSTS, CSP ...)
+.assetsignore                 # yayına çıkmayacak dosyalar
+.well-known/security.txt      # güvenlik iletişim bilgisi
 scripts/fetch_data.py         # veri toplama
 data/latest.json              # arayüzün okuduğu veri (bot günceller)
 data/history.csv              # çalıştırma başına özet
-.github/workflows/update-data.yml
+.github/workflows/update-data.yml   # günlük veri çekimi
+.github/workflows/uptime.yml        # canlı adres izleme (hata olursa e-posta)
+.github/workflows/zap.yml           # OWASP ZAP baseline taraması (elle çalıştırılır)
+.github/dependabot.yml              # Actions bağımlılık güncellemeleri
 ```
 
 ## Yerelde çalıştırma
@@ -47,6 +57,14 @@ Ardından tarayıcıda `localhost:8000` adresini açın. `index.html` dosyasın�
 - **Oyun estetiği yalnızca başlıkta:** Piksel yazı tipi sadece başlıkta kullanıldı; rakamlar ve metinler okunaklı bir yazı tipinde.
 - **Tek ana grafik:** Saçılım grafiği sayfanın merkezinde; tür grafiği ve tablo onu destekliyor.
 - **Dayanıklılık:** Yükleniyor, hata ve boş durumları ayrı tasarlandı; sunucuya ulaşılamazsa son kayıtlı veri gösterilir ve kullanıcı bilgilendirilir.
+
+## Güvenlik ve altyapı
+
+- Cloudflare Workers üzerinde yayında; yalnızca `/data/*` istekleri Worker'dan geçer ve IP başına dakikada 60 istekle sınırlanır, yanıtlar 5 dakika önbelleğe alınır (maliyet saldırısına karşı).
+- HSTS, CSP, `X-Content-Type-Options`, `Referrer-Policy`, `Permissions-Policy` ve `frame-ancestors` başlıkları `_headers` dosyasında.
+- Kodda veya depoda hiçbir API anahtarı yok; GitHub Actions işleri en az yetkiyle (`contents`) çalışır.
+- Canlı adres her 6 saatte bir izlenir (`uptime.yml`), ZAP taraması `zap.yml` ile yapılır, Dependabot Actions sürümlerini günceller.
+- Ayrıntılar ve kanıtlar güvenlik raporunda.
 
 ## Erişilebilirlik
 
@@ -102,6 +120,10 @@ Bu projede **Claude (Anthropic)** yapay zekâ asistanı kullanıldı.
 - Yayında karşılaştığım hatayı (`index.html` dosyası ana klasörde olmadığı için sitenin açılmaması) buldum ve düzelttim.
 - Yayındaki panoyu inceleyip sonuçları kontrol ettim.
 
+- Cloudflare yayını, güvenlik başlıkları, hız sınırı ve güvenlik raporu üzerinde Claude ile birlikte çalıştım; ayarları ve ekran görüntülerini kendim aldım.
+
 ## CV cümlesi
 
 GitHub Actions ile günlük güncellenen, Steam oyun pazarını D3.js ile görselleştiren ve koordineli görünümler sunan canlı bir veri panosu tasarladım ve yayına aldım.
+
+**Güvenlik (CV):** Canlı veri panomu Cloudflare Workers'a taşıyıp hız sınırı, önbellek, HSTS ve CSP ile maliyet saldırısına karşı güvenceye aldım; Mozilla Observatory A+ ve securityheaders.com A notu aldım.

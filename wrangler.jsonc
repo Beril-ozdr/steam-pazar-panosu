@@ -1,6 +1,7 @@
 {
   "name": "steam-pazar-panosu",
   "main": "src/worker.js",
+  "observability": { "enabled": true },
   "compatibility_date": "2026-10-24",
   "assets": {
     "directory": "./",

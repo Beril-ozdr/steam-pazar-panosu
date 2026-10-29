@@ -1,0 +1,8 @@
+# Sitede yayınlanmayacak dosyalar (yalnızca index.html, data/ ve .well-known/ yayında kalır)
+.github
+.git
+scripts
+src
+wrangler.jsonc
+README.md
+.assetsignore
