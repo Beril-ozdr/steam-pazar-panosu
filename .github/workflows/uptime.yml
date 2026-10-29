@@ -1,0 +1,19 @@
+name: Canlı adres izleme
+
+# Canlı adres yanıt vermezse bu iş başarısız olur; GitHub bunu e-posta ile bildirir.
+on:
+  schedule:
+    - cron: "11 */6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  uptime:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Sayfa ve veri dosyasını kontrol et
+        run: |
+          curl --fail --silent --show-error --retry 3 --retry-delay 10 --max-time 30 -o /dev/null https://steam-pazar-panosu.ozdizdarberil.workers.dev/
+          curl --fail --silent --show-error --retry 3 --retry-delay 10 --max-time 30 -o /dev/null https://steam-pazar-panosu.ozdizdarberil.workers.dev/data/latest.json
