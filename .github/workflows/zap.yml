@@ -12,7 +12,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: ZAP baseline taraması
-        uses: zaproxy/action-baseline@v0.14.0
+        uses: zaproxy/action-baseline@v0.15.0
         with:
           target: "https://steam-pazar-panosu.ozdizdarberil.workers.dev"
           allow_issue_writing: false
